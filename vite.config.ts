@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/low-effort-camp/',
+  base: process.env.VERCEL ? '/' : '/low-effort-camp/',
 })
