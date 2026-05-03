@@ -1,0 +1,139 @@
+# Task: Redesign Low Effort Camp app — Light, Minimal, Intuitive
+
+## Context
+This is a React + Vite + Tailwind + TypeScript + Wouter app for managing a burner camp (Low Effort Leftovers at Borderland 2026). It currently has a dark "campfire" theme and 6 pages. Data is seeded from Google Sheets.
+
+## Goal
+1. Complete visual overhaul: bright, light, minimalist, intuitive
+2. Reduce to 3 tabs: Dashboard, Shifts, Points
+3. Merge Campers/Layout/Kitchen into the Dashboard as collapsible sections
+4. Dashboard should be the single source of truth — view AND edit everything inline
+5. Integrate the new useSheetSync hook (already written at src/hooks/useSheetSync.ts)
+6. The app should work without Google Sheets (falls back to seed data + localStorage)
+
+## Design Tokens (Tailwind classes)
+- Background: white, gray-50, gray-100
+- Cards: bg-white, rounded-xl, shadow-sm, border border-gray-100
+- Text: gray-900 (headings), gray-600 (body), gray-400 (muted)
+- Accent: orange-500 (sparingly — buttons, active states, highlights)
+- Success: green-500, Warning: amber-500, Danger: red-500
+- Inputs: bg-white, border-gray-200, rounded-lg, focus:ring-orange-500
+- Spacing: generous padding (p-4, p-6), gap-4, gap-6
+- No dark mode. Remove all dark/zinc/slate/emerald color classes.
+- Typography: font-sans, text-sm default, generous line-height
+- Transitions: smooth, subtle
+
+## Architecture Changes
+1. In src/App.tsx: replace useCampData with useSheetSync. Wrap app in IdentityProvider (already exists). Only 3 routes: /, /shifts, /points.
+2. Delete src/pages/Layout.tsx and src/pages/Kitchen.tsx (merge into Dashboard).
+3. src/hooks/useCampData.ts should re-export from useSheetSync for backwards compat OR update all imports.
+4. src/components/layout/AppShell.tsx: light redesign. Top bar white with subtle shadow. Sidebar white. Bottom nav white with border-t. Remove export/import buttons from top bar — put them in Dashboard footer.
+
+## Dashboard Page (src/pages/Dashboard.tsx) — COMPLETE REBUILD
+This is the hero page. It should feel like a clean, modern app.
+
+### Sections (top to bottom):
+
+1. **Identity Bar**
+   - If logged in: "Operating as [Name]" pill with avatar initials + Switch button
+   - If not: "Who are you?" button that opens picker
+   - Compact, subtle, right-aligned or in a top strip
+
+2. **Stats Row**
+   - 4-5 compact stat pills: Campers · Peak Day · Transport · Dietary · Allergies
+   - Small numbers, big values, muted labels
+   - Horizontal scroll on mobile
+
+3. **My Status** (only if identity set)
+   - Card with: your points, status badge, fee status, shift count
+   - Your upcoming shifts as small tags
+   - Click any to navigate to Shifts page
+
+4. **Camp Timeline**
+   - Keep the bar chart but light themed
+   - Confirmed = orange-500, Maybe = orange-200
+   - Click a bar to toggle YOUR attendance for that day (if identity set)
+   - Show day label + count below each bar
+
+5. **Campers Section** (collapsible, default open)
+   - Clean table/list — NOT a dense data table
+   - Show: Name, Attendance strip (13 mini squares), Transport icon, Dietary icon (if any)
+   - Click a row to expand inline and edit: email, phone, dietary, allergies, transport
+   - Attendance strip squares are clickable (toggle confirmed/maybe/no)
+   - Highlight "you" row with subtle orange left border
+   - Search filter at top of section
+
+6. **Shifts Preview** (collapsible, default closed)
+   - Show ONLY your shifts (if identity set) OR all shifts for today
+   - Each shift: name, day, points, remove button
+   - "Manage all shifts →" link to Shifts page
+
+7. **Points Preview** (collapsible, default closed)
+   - Top 5 leaderboard
+   - Your position highlighted
+   - "Full points table →" link
+
+8. **Kitchen & Layout** (collapsible, default closed)
+   - Kitchen: simple checklist with checkboxes
+   - Layout: simple text list
+
+9. **Alerts**
+   - Low points people, missing transport, dietary warnings
+   - Show as subtle warning cards, not dense lists
+
+10. **Footer**
+    - Export JSON, Import JSON, Reset buttons
+    - Sync status indicator (green dot = synced, yellow = offline, red = error)
+    - "Works offline — data saved locally"
+
+## Shifts Page (src/pages/Shifts.tsx) — LIGHT REDESIGN
+- Light theme, same functionality
+- Cleaner cards, less borders
+- "+ me" quick signup when identity is set
+- Keep the day grid but with lighter styling
+
+## Points Page (src/pages/Points.tsx) — LIGHT REDESIGN
+- Light theme, same table structure
+- Your row pinned to top, highlighted
+- Manual bonus inputs styled cleanly
+
+## Global CSS (src/index.css)
+Rebuild the CSS custom properties for light theme:
+```css
+:root {
+  --camp-bg: #ffffff;
+  --camp-surface: #f8f9fa;
+  --camp-border: #e5e7eb;
+  --camp-accent: #f97316; /* orange-500 */
+  --camp-text: #1f2937;
+  --camp-text-muted: #6b7280;
+}
+```
+
+Update all .card, .btn-primary, .btn-secondary, .input, .badge-* classes for light theme.
+.btn-primary should be bg-orange-500 text-white.
+.badge-success: bg-green-100 text-green-700.
+.badge-warn: bg-amber-100 text-amber-700.
+.badge-danger: bg-red-100 text-red-700.
+
+## Important Notes
+- The app uses wouter for routing. Keep that.
+- The app uses lucide-react for icons. Keep that.
+- The useSheetSync hook returns { data, status, lastSync, USE_SHEETS, updateCamper, setAttendance, addCamperToShift, removeCamperFromShift, updateKitchenItem, updateExtraPoints, replaceData, resetToSeed, refreshFromSheets }
+- All state changes through useSheetSync auto-save to localStorage and sync to Google Sheets if VITE_GAS_URL is configured.
+- Keep TypeScript strict. No `any` types.
+- Mobile-first responsive design.
+
+## Files to modify:
+- src/index.css (rebuild)
+- src/App.tsx (simplify routes, useSheetSync)
+- src/hooks/useCampData.ts (delete or re-export)
+- src/components/layout/AppShell.tsx (light redesign)
+- src/pages/Dashboard.tsx (complete rebuild)
+- src/pages/Shifts.tsx (light redesign)
+- src/pages/Points.tsx (light redesign)
+- src/pages/Campers.tsx (keep but lighter — or merge into Dashboard)
+- src/pages/Layout.tsx (DELETE)
+- src/pages/Kitchen.tsx (DELETE)
+
+Please implement all of this. Build with `npm run build` at the end and report any errors.

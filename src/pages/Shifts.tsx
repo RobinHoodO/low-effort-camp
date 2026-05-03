@@ -5,7 +5,7 @@ import type { Shift, ShiftCategory } from "../data/types";
 import { Modal } from "../components/ui/Modal";
 import { useToast } from "../hooks/useToast";
 import { useIdentity } from "../hooks/useIdentity";
-import type { UseCampData } from "../hooks/useCampData";
+import type { UseSheetSync } from "../hooks/useSheetSync";
 import { computePoints, shiftFullness } from "../lib/points";
 import { cn } from "../lib/cn";
 
@@ -17,18 +17,17 @@ const categoryLabels: Record<ShiftCategory, string> = {
   Dinner: "Dinner",
 };
 const categoryColor: Record<ShiftCategory, string> = {
-  LNT: "border-l-blue-500/60",
-  Breakfast: "border-l-yellow-500/60",
-  "Pre-Dinner": "border-l-purple-500/60",
-  Dinner: "border-l-camp-accent",
+  LNT: "border-l-blue-400",
+  Breakfast: "border-l-amber-400",
+  "Pre-Dinner": "border-l-purple-400",
+  Dinner: "border-l-orange-400",
 };
 
-export function ShiftsPage({ camp }: { camp: UseCampData }) {
+export function ShiftsPage({ camp }: { camp: UseSheetSync }) {
   const { me } = useIdentity();
   const [filterPerson, setFilterPerson] = useState<string>(me?.name ?? "");
   const [signupTarget, setSignupTarget] = useState<{ shiftId: string; day: string } | null>(null);
 
-  // keep filter in sync when identity changes
   useEffect(() => {
     if (me) setFilterPerson(me.name);
   }, [me?.name]);
@@ -57,20 +56,20 @@ export function ShiftsPage({ camp }: { camp: UseCampData }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Shifts</h1>
-          <p className="text-zinc-400 text-sm">
+          <h1 className="text-2xl font-bold text-gray-900">Shifts</h1>
+          <p className="text-gray-400 text-sm mt-0.5">
             Sign up to earn points. Click an empty slot to add yourself or a campmate.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="label">My shifts</label>
+          <label className="label">Filter</label>
           <select
             value={filterPerson}
             onChange={(e) => setFilterPerson(e.target.value)}
-            className="input w-48"
+            className="input w-44"
           >
             <option value="">— show everyone —</option>
             {personNames.map((n) => (
@@ -84,13 +83,13 @@ export function ShiftsPage({ camp }: { camp: UseCampData }) {
       </div>
 
       {filterPerson && (
-        <div className="card flex items-center justify-between bg-camp-accent/10 border-camp-accent/30">
+        <div className="card bg-orange-50/50 border-orange-100 flex items-center justify-between">
           <div className="text-sm">
-            <span className="font-semibold text-amber-300">{filterPerson}</span>
-            <span className="text-zinc-300"> · {pointsByName.get(filterPerson) ?? 0} points so far</span>
+            <span className="font-semibold text-orange-700">{filterPerson}</span>
+            <span className="text-gray-500"> · {pointsByName.get(filterPerson) ?? 0} points</span>
           </div>
-          <button onClick={() => setFilterPerson("")} className="btn-ghost text-zinc-300">
-            Clear filter
+          <button onClick={() => setFilterPerson("")} className="btn-ghost text-gray-400 text-xs">
+            Clear
           </button>
         </div>
       )}
@@ -100,11 +99,11 @@ export function ShiftsPage({ camp }: { camp: UseCampData }) {
         if (!shifts || shifts.length === 0) return null;
         return (
           <section key={cat} className="space-y-2">
-            <h2 className="text-lg font-semibold text-zinc-100">
-              {categoryLabels[cat]}{" "}
-              <span className="text-xs text-zinc-500">({shifts.length} shifts)</span>
+            <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+              {categoryLabels[cat]}
+              <span className="text-xs text-gray-400 font-normal">({shifts.length} shifts)</span>
             </h2>
-            <div className="grid gap-2">
+            <div className="grid gap-3">
               {shifts.map((shift) => (
                 <ShiftCard
                   key={shift.id}
@@ -162,27 +161,25 @@ function ShiftCard({
   const totalCapacity = shift.slots ?? null;
 
   return (
-    <div className={cn("card border-l-4 p-3", categoryColor[shift.category as ShiftCategory])}>
+    <div className={cn("card border-l-4 p-4", categoryColor[shift.category as ShiftCategory])}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="font-semibold text-zinc-100">{shift.name}</div>
+          <div className="font-semibold text-gray-800">{shift.name}</div>
           {shift.notes && (
-            <p className="text-xs text-zinc-400 mt-1 max-w-3xl">{shift.notes}</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-3xl">{shift.notes}</p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="badge-accent">{shift.points} pt</span>
           {totalCapacity != null ? (
-            <span className="badge-muted">
-              {totalFilled}/{totalCapacity}
-            </span>
+            <span className="badge-muted">{totalFilled}/{totalCapacity}</span>
           ) : (
             <span className="badge-muted">{totalFilled} signups</span>
           )}
         </div>
       </div>
 
-      <div className="mt-3 grid gap-1 grid-cols-7">
+      <div className="mt-4 grid gap-2 grid-cols-7">
         {shiftDayLabels.map((day) => {
           const list = shift.days[day] ?? [];
           const fullness = shiftFullness(shift, day);
@@ -192,52 +189,45 @@ function ShiftCard({
             <div
               key={day}
               className={cn(
-                "rounded-md border bg-camp-bg/40 p-1.5 min-h-[64px] flex flex-col gap-1",
+                "rounded-lg border bg-gray-50/50 p-2 min-h-[72px] flex flex-col gap-1.5",
                 isMine
-                  ? "border-camp-accent/60 ring-1 ring-camp-accent/30"
-                  : "border-camp-border",
+                  ? "border-orange-300 ring-1 ring-orange-100"
+                  : "border-gray-100",
               )}
             >
-              <div className="flex items-center justify-between text-[10px] text-zinc-500">
+              <div className="flex items-center justify-between text-[10px] text-gray-400 font-medium">
                 <span>{day.slice(0, 3)}</span>
                 {fullness.slots != null && (
-                  <span
-                    className={cn(
-                      fullness.isFull ? "text-zinc-400" : "text-zinc-500",
-                    )}
-                  >
+                  <span className={fullness.isFull ? "text-gray-300" : "text-gray-400"}>
                     {fullness.filled}/{fullness.slots}
                   </span>
                 )}
               </div>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 {list.map((name) => (
                   <button
                     key={day + name}
                     onClick={() => onRemove(day, name)}
                     title="Click to remove"
                     className={cn(
-                      "group flex items-center justify-between text-[11px] rounded px-1.5 py-0.5 truncate",
+                      "group flex items-center justify-between text-[11px] rounded-md px-2 py-1 truncate transition-colors",
                       highlightPerson && name === highlightPerson
-                        ? "bg-camp-accent text-black font-semibold"
-                        : "bg-camp-surface border border-camp-border text-zinc-200 hover:border-red-500/40 hover:text-red-300",
+                        ? "bg-orange-500 text-white font-semibold"
+                        : "bg-white border border-gray-100 text-gray-600 hover:border-red-300 hover:text-red-500",
                     )}
                   >
                     <span className="truncate">{name}</span>
-                    <X
-                      size={10}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
+                    <X size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
                 {!imAlreadyOn && (
                   <button
-                    onClick={() => me ? onSignMeUp(day) : onSlotClick(day)}
+                    onClick={() => (me ? onSignMeUp(day) : onSlotClick(day))}
                     className={cn(
-                      "flex items-center justify-center gap-1 text-[11px] rounded border border-dashed py-0.5 transition-colors",
+                      "flex items-center justify-center gap-1 text-[11px] rounded-md border border-dashed py-1 transition-colors",
                       fullness.isFull
-                        ? "border-camp-border/60 text-zinc-600 hover:text-zinc-400"
-                        : "border-camp-border text-zinc-400 hover:border-camp-accent hover:text-amber-300",
+                        ? "border-gray-200 text-gray-300 hover:text-gray-400"
+                        : "border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500",
                     )}
                   >
                     <Plus size={10} /> {me ? "me" : "add"}
@@ -258,7 +248,7 @@ function SignupModal({
   onClose,
   defaultName,
 }: {
-  camp: UseCampData;
+  camp: UseSheetSync;
   target: { shiftId: string; day: string } | null;
   onClose: () => void;
   defaultName?: string;
@@ -286,12 +276,7 @@ function SignupModal({
   };
 
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={`Sign up — ${shift.name} · ${target.day}`}
-      widthClassName="sm:max-w-md"
-    >
+    <Modal open onClose={onClose} title={`Sign up — ${shift.name} · ${target.day}`} widthClassName="sm:max-w-md">
       <div className="space-y-3">
         <input
           autoFocus
@@ -300,22 +285,22 @@ function SignupModal({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="max-h-72 overflow-y-auto rounded-md border border-camp-border divide-y divide-camp-border">
+        <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-100 divide-y divide-gray-50">
           {candidates.length === 0 && (
-            <div className="p-3 text-center text-sm text-zinc-500">No matches.</div>
+            <div className="p-3 text-center text-sm text-gray-400">No matches.</div>
           )}
           {candidates.map((name) => (
             <button
               key={name}
               onClick={() => sign(name)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-camp-bg flex items-center justify-between"
+              className="w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between text-gray-700"
             >
               <span>{name}</span>
-              <Plus size={14} className="text-zinc-500" />
+              <Plus size={14} className="text-gray-400" />
             </button>
           ))}
         </div>
-        <div className="border-t border-camp-border pt-3">
+        <div className="border-t border-gray-100 pt-3">
           <div className="label mb-1">Add a non-camper / placeholder</div>
           <div className="flex gap-2">
             <input

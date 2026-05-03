@@ -2,113 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-}
+@layer base {
+  :root {
+    --camp-bg: #ffffff;
+    --camp-surface: #f8f9fa;
+    --camp-border: #e5e7eb;
+    --camp-accent: #f97316;
+    --camp-text: #1f2937;
+    --camp-text-muted: #6b7280;
+  }
 
-html,
-body,
-#root {
-  height: 100%;
-}
+  html,
+  body,
+  #root {
+    height: 100%;
+    background-color: var(--camp-bg);
+    color: var(--camp-text);
+  }
 
-body {
-  background: #0a0a0f;
-  color: #ededf2;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-/* scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #0a0a0f;
-}
-::-webkit-scrollbar-thumb {
-  background: #252535;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #353548;
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 @layer components {
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-camp-accent focus:ring-offset-2 focus:ring-offset-camp-bg disabled:opacity-50 disabled:pointer-events-none;
-  }
-  .btn-primary {
-    @apply btn bg-camp-accent text-black hover:bg-camp-accentHover;
-  }
-  .btn-secondary {
-    @apply btn bg-camp-surface border border-camp-border text-zinc-100 hover:border-zinc-500;
-  }
-  .btn-ghost {
-    @apply btn text-zinc-300 hover:bg-camp-surface;
-  }
-  .btn-danger {
-    @apply btn bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20;
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm p-4;
   }
 
-  .card {
-    @apply bg-camp-surface border border-camp-border rounded-xl p-4;
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none;
   }
 
   .input {
-    @apply w-full rounded-md bg-camp-bg border border-camp-border px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-camp-accent focus:border-transparent;
+    @apply w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500;
   }
 
   .label {
-    @apply text-xs font-medium uppercase tracking-wide text-zinc-400;
+    @apply text-xs font-medium uppercase tracking-wide text-gray-400;
   }
 
-  .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
-  }
   .badge-success {
-    @apply badge bg-green-500/15 text-green-300 border border-green-500/30;
+    @apply inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700;
   }
+
   .badge-warn {
-    @apply badge bg-yellow-500/15 text-yellow-300 border border-yellow-500/30;
+    @apply inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700;
   }
+
   .badge-danger {
-    @apply badge bg-red-500/15 text-red-300 border border-red-500/30;
+    @apply inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700;
   }
+
   .badge-muted {
-    @apply badge bg-zinc-500/15 text-zinc-300 border border-zinc-500/30;
+    @apply inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500;
   }
+
   .badge-accent {
-    @apply badge bg-camp-accent/15 text-amber-300 border border-camp-accent/30;
+    @apply inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700;
+  }
+
+  .data-table {
+    @apply w-full text-left text-sm;
+  }
+
+  .data-table thead {
+    @apply border-b border-gray-100;
+  }
+
+  .data-table th {
+    @apply px-3 py-2 font-medium text-gray-400;
+  }
+
+  .data-table td {
+    @apply px-3 py-2 text-gray-600;
+  }
+
+  .data-table tbody tr {
+    @apply border-b border-gray-50 transition-colors hover:bg-gray-50/50;
   }
 
   .table-wrapper {
-    @apply overflow-x-auto rounded-xl border border-camp-border bg-camp-surface;
+    @apply overflow-x-auto rounded-xl border border-gray-100;
   }
-  .data-table {
-    @apply w-full text-sm;
-  }
-  .data-table thead th {
-    @apply bg-camp-bg/60 backdrop-blur sticky top-0 z-10 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400 border-b border-camp-border whitespace-nowrap;
-  }
-  .data-table tbody td {
-    @apply px-3 py-2 border-b border-camp-border/60 text-zinc-200 align-middle;
-  }
-  .data-table tbody tr:hover {
-    @apply bg-white/[0.02];
-  }
-  .data-table tbody tr:last-child td {
-    border-bottom: 0;
-  }
-}
-
-/* tiny ember animation for the camp logo */
-@keyframes ember {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; }
-  50% { transform: translateY(-2px) scale(1.06); opacity: 1; }
-}
-.ember {
-  animation: ember 1.6s ease-in-out infinite;
 }

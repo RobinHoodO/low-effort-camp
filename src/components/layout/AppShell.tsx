@@ -1,102 +1,40 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import {
   CalendarDays,
-  Download,
   Flame,
-  Home,
-  ListChecks,
+  LayoutDashboard,
   LogOut,
-  MapPinned,
-  RotateCcw,
   Trophy,
-  Upload,
   UserCircle,
-  UtensilsCrossed,
-  Users,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
-import { useToast } from "../../hooks/useToast";
 import { useIdentity } from "../../hooks/useIdentity";
-import { exportCampData, importCampData } from "../../hooks/useExport";
-import type { UseCampData } from "../../hooks/useCampData";
+import type { UseSheetSync } from "../../hooks/useSheetSync";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: Home },
-  { href: "/campers", label: "Campers", icon: Users },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/shifts", label: "Shifts", icon: CalendarDays },
   { href: "/points", label: "Points", icon: Trophy },
-  { href: "/layout", label: "Layout", icon: MapPinned },
-  { href: "/kitchen", label: "Kitchen", icon: UtensilsCrossed },
 ];
 
-export function AppShell({ camp, children }: { camp: UseCampData; children: ReactNode }) {
+export function AppShell({ camp, children }: { camp: UseSheetSync; children: ReactNode }) {
   const [location] = useLocation();
-  const toast = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
   const { me, campers, setMe, clearMe } = useIdentity();
   const [showPicker, setShowPicker] = useState(false);
 
-  const onExport = () => {
-    exportCampData(camp.data);
-    toast.push("Camp data exported", "success");
-  };
-
-  const onImportClick = () => fileRef.current?.click();
-
-  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      const next = await importCampData(file);
-      camp.replaceData(next);
-      toast.push("Camp data imported", "success");
-    } catch (err) {
-      console.error(err);
-      toast.push("Import failed: " + (err as Error).message, "danger");
-    }
-  };
-
-  const onReset = () => {
-    if (
-      window.confirm(
-        "Reset all camp data to the seed values? This will wipe your changes from this device.",
-      )
-    ) {
-      camp.resetToSeed();
-      toast.push("Reset to seed data", "warn");
-    }
-  };
-
   return (
-    <div className="min-h-full">
-      <input
-        ref={fileRef}
-        type="file"
-        accept="application/json"
-        onChange={onImportFile}
-        className="hidden"
-      />
-
+    <div className="min-h-full bg-gray-50">
       {/* Mobile top bar */}
-      <header className="lg:hidden sticky top-0 z-30 bg-camp-bg/90 backdrop-blur border-b border-camp-border px-4 py-3 flex items-center justify-between">
+      <header className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <Brand compact />
-        <div className="flex items-center gap-2">
-          <IdentityMini me={me} onClick={() => setShowPicker(true)} />
-          <button onClick={onExport} className="btn-ghost p-2" title="Export">
-            <Download size={18} />
-          </button>
-          <button onClick={onImportClick} className="btn-ghost p-2" title="Import">
-            <Upload size={18} />
-          </button>
-        </div>
+        <IdentityMini me={me} onClick={() => setShowPicker(true)} />
       </header>
 
       <div className="lg:flex">
         {/* Sidebar (desktop) */}
-        <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-camp-border bg-camp-surface min-h-screen sticky top-0">
-          <div className="p-5 border-b border-camp-border">
+        <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-gray-100 bg-white min-h-screen sticky top-0">
+          <div className="p-4 border-b border-gray-100">
             <Brand />
           </div>
 
@@ -104,7 +42,7 @@ export function AppShell({ camp, children }: { camp: UseCampData; children: Reac
             <IdentityCard me={me} campers={campers} onSet={setMe} onClear={clearMe} />
           </div>
 
-          <nav className="flex-1 p-3 space-y-1">
+          <nav className="flex-1 p-2 space-y-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = location === item.href;
@@ -113,10 +51,10 @@ export function AppShell({ camp, children }: { camp: UseCampData; children: Reac
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     active
-                      ? "bg-camp-accent/15 text-amber-300"
-                      : "text-zinc-300 hover:bg-camp-bg hover:text-zinc-100",
+                      ? "bg-orange-50 text-orange-600"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
                   )}
                 >
                   <Icon size={18} />
@@ -125,31 +63,31 @@ export function AppShell({ camp, children }: { camp: UseCampData; children: Reac
               );
             })}
           </nav>
-          <div className="p-3 border-t border-camp-border space-y-2">
-            <button onClick={onExport} className="btn-secondary w-full">
-              <Download size={16} /> Export JSON
-            </button>
-            <button onClick={onImportClick} className="btn-secondary w-full">
-              <Upload size={16} /> Import JSON
-            </button>
-            <button onClick={onReset} className="btn-ghost w-full text-zinc-500 hover:text-zinc-200">
-              <RotateCcw size={16} /> Reset to seed
-            </button>
-            <p className="text-[10px] text-zinc-500 text-center pt-2">
-              <ListChecks size={10} className="inline mr-1" />
-              Saved locally on this device
-            </p>
+
+          <div className="p-3 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  camp.status === "error" && "bg-red-500",
+                  camp.status === "offline" && "bg-amber-400",
+                  camp.status === "loading" && "bg-orange-400 animate-pulse",
+                  camp.status === "idle" && "bg-green-500",
+                )}
+              />
+              {camp.status === "idle" ? "Synced" : camp.status === "offline" ? "Offline" : camp.status}
+            </div>
           </div>
         </aside>
 
         {/* Main */}
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-5 pb-24 lg:pb-8 max-w-screen-2xl mx-auto w-full">
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-8 max-w-screen-xl mx-auto w-full">
           {children}
         </main>
       </div>
 
       {/* Bottom nav (mobile) */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-camp-surface/95 backdrop-blur border-t border-camp-border grid grid-cols-6">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-gray-100 grid grid-cols-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = location === item.href;
@@ -158,11 +96,11 @@ export function AppShell({ camp, children }: { camp: UseCampData; children: Reac
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-2 gap-0.5 text-[10px]",
-                active ? "text-amber-300" : "text-zinc-400",
+                "flex flex-col items-center justify-center py-2 gap-0.5 text-[11px] font-medium",
+                active ? "text-orange-500" : "text-gray-400",
               )}
             >
-              <Icon size={18} />
+              <Icon size={20} />
               {item.label}
             </Link>
           );
@@ -200,21 +138,21 @@ function IdentityCard({
     );
   }
   return (
-    <div className="rounded-lg border border-camp-border bg-camp-bg/60 p-3">
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-full bg-camp-accent/20 border border-camp-accent/40 flex items-center justify-center text-amber-300 font-bold text-xs">
+        <div className="w-8 h-8 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600 font-bold text-xs">
           {initials(me.name)}
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-zinc-100 truncate">{me.name}</div>
-          <div className="text-[10px] text-zinc-400">Operating as you</div>
+          <div className="text-sm font-semibold text-gray-900 truncate">{me.name}</div>
+          <div className="text-[10px] text-gray-400">Operating as you</div>
         </div>
       </div>
       <div className="flex gap-2">
         <button onClick={() => setOpen(true)} className="btn-secondary flex-1 text-xs py-1.5">
           Switch
         </button>
-        <button onClick={onClear} className="btn-ghost p-1.5 text-zinc-400" title="Log out">
+        <button onClick={onClear} className="btn-ghost p-1.5 text-gray-400" title="Log out">
           <LogOut size={14} />
         </button>
       </div>
@@ -235,15 +173,15 @@ function IdentityMini({ me, onClick }: { me: ReturnType<typeof useIdentity>["me"
     <button onClick={onClick} className="flex items-center gap-1.5 btn-ghost py-1.5 px-2">
       {me ? (
         <>
-          <div className="w-6 h-6 rounded-full bg-camp-accent/20 border border-camp-accent/40 flex items-center justify-center text-amber-300 font-bold text-[10px]">
+          <div className="w-7 h-7 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600 font-bold text-[10px]">
             {initials(me.name)}
           </div>
-          <span className="text-xs text-zinc-200 truncate max-w-[80px]">{me.name}</span>
+          <span className="text-sm font-medium text-gray-700 truncate max-w-[100px]">{me.name}</span>
         </>
       ) : (
         <>
-          <UserCircle size={16} className="text-zinc-400" />
-          <span className="text-xs text-zinc-400">Log in</span>
+          <UserCircle size={20} className="text-gray-400" />
+          <span className="text-sm text-gray-400">Log in</span>
         </>
       )}
     </button>
@@ -267,7 +205,7 @@ function IdentityPickerPopover({
     .sort((a, b) => a.name.localeCompare(b.name));
   return (
     <div className="mt-2 relative">
-      <div className="absolute z-20 inset-x-0 top-0 bg-camp-surface border border-camp-border rounded-lg shadow-xl p-2">
+      <div className="absolute z-20 inset-x-0 top-0 bg-white border border-gray-100 rounded-xl shadow-xl p-2">
         <input
           autoFocus
           className="input mb-1"
@@ -281,18 +219,18 @@ function IdentityPickerPopover({
               key={c.id}
               onClick={() => onSelect(c.id)}
               className={cn(
-                "w-full text-left px-2 py-1.5 rounded text-sm flex items-center gap-2",
-                c.id === currentId ? "bg-camp-accent/15 text-amber-300" : "hover:bg-camp-bg text-zinc-200",
+                "w-full text-left px-2 py-1.5 rounded-lg text-sm flex items-center gap-2",
+                c.id === currentId ? "bg-orange-50 text-orange-600" : "hover:bg-gray-50 text-gray-700",
               )}
             >
-              <span className="w-6 h-6 rounded-full bg-camp-bg border border-camp-border flex items-center justify-center text-[10px] text-zinc-400 font-bold">
+              <span className="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[10px] text-gray-400 font-bold">
                 {initials(c.name)}
               </span>
               {c.name}
             </button>
           ))}
           {list.length === 0 && (
-            <div className="text-xs text-zinc-500 text-center py-2">No matches.</div>
+            <div className="text-xs text-gray-400 text-center py-2">No matches.</div>
           )}
         </div>
         <button onClick={onClose} className="btn-ghost w-full mt-1 text-xs py-1">
@@ -317,9 +255,9 @@ function IdentityPickerModal({
     .filter((c) => c.name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-camp-surface border border-camp-border rounded-xl shadow-2xl w-full max-w-sm p-4 space-y-3">
-        <div className="text-sm font-semibold text-zinc-100">Who are you?</div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-2xl w-full max-w-sm p-4 space-y-3">
+        <div className="text-sm font-semibold text-gray-900">Who are you?</div>
         <input
           autoFocus
           className="input"
@@ -332,16 +270,16 @@ function IdentityPickerModal({
             <button
               key={c.id}
               onClick={() => onSelect(c.id)}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 hover:bg-camp-bg text-zinc-200"
+              className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-3 hover:bg-gray-50 text-gray-700"
             >
-              <span className="w-8 h-8 rounded-full bg-camp-bg border border-camp-border flex items-center justify-center text-xs text-zinc-400 font-bold">
+              <span className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-xs text-gray-400 font-bold">
                 {initials(c.name)}
               </span>
               {c.name}
             </button>
           ))}
           {list.length === 0 && (
-            <div className="text-sm text-zinc-500 text-center py-4">No matches.</div>
+            <div className="text-sm text-gray-400 text-center py-4">No matches.</div>
           )}
         </div>
         <button onClick={onClose} className="btn-ghost w-full text-sm py-2">
@@ -363,14 +301,14 @@ function initials(name: string) {
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative w-10 h-10 rounded-lg bg-camp-accent/15 border border-camp-accent/30 flex items-center justify-center">
-        <Flame className="ember text-amber-400" size={22} />
+    <div className="flex items-center gap-2.5">
+      <div className="relative w-9 h-9 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center">
+        <Flame className="text-orange-500" size={20} />
       </div>
       <div>
-        <div className="font-bold leading-tight tracking-tight">Low Effort Leftovers</div>
+        <div className="font-bold leading-tight tracking-tight text-gray-900">Low Effort</div>
         {!compact && (
-          <div className="text-[11px] text-zinc-400">Borderland 2026 · camp HQ</div>
+          <div className="text-[11px] text-gray-400">Borderland 2026</div>
         )}
       </div>
     </div>
