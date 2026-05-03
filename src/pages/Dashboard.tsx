@@ -13,11 +13,13 @@ import {
 import { dayLabels, rules } from "../data/seed-data";
 import { computePoints, statusForCamper } from "../lib/points";
 import { useToast } from "../hooks/useToast";
+import { useIdentity } from "../hooks/useIdentity";
 import type { UseCampData } from "../hooks/useCampData";
 
 export function DashboardPage({ camp }: { camp: UseCampData }) {
   const { data } = camp;
   const toast = useToast();
+  const { me } = useIdentity();
 
   const points = useMemo(() => computePoints(data), [data]);
   const pointsByName = useMemo(
@@ -68,6 +70,21 @@ export function DashboardPage({ camp }: { camp: UseCampData }) {
     }
   };
 
+  const myPoints = me ? pointsByName.get(me.name) : undefined;
+  const myStatus = me ? statusForCamper(me, myPoints) : null;
+  const myShifts = useMemo(() => {
+    if (!me) return [];
+    const out: { shift: string; day: string; points: number }[] = [];
+    for (const s of data.shifts) {
+      for (const [day, names] of Object.entries(s.days)) {
+        if (names.includes(me.name)) {
+          out.push({ shift: s.name, day, points: s.points });
+        }
+      }
+    }
+    return out;
+  }, [data.shifts, me]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -76,12 +93,61 @@ export function DashboardPage({ camp }: { camp: UseCampData }) {
           <span className="text-sm uppercase tracking-widest">Camp HQ</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold mt-1">
-          Welcome to Low Effort Leftovers
+          {me ? `Hey, ${me.name.split(" ")[0]}` : "Welcome to Low Effort Leftovers"}
         </h1>
         <p className="text-zinc-400 mt-1">
           Borderland 2026 — Build Aug 15 · Event Aug 20–26 · Strike Aug 27
         </p>
       </div>
+
+      {me && (
+        <section className="card border-camp-accent/30 bg-camp-accent/5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-camp-accent/20 border border-camp-accent/40 flex items-center justify-center text-amber-300 font-bold text-sm">
+                {me.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+              </div>
+              <div>
+                <div className="font-semibold text-zinc-100">{me.name}</div>
+                <div className="text-xs text-zinc-400">
+                  {myShifts.length} shift{myShifts.length !== 1 ? "s" : ""} · {myPoints?.total ?? 0} points
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {myStatus && (
+                <span
+                  className={
+                    myStatus.tone === "success"
+                      ? "badge-success"
+                      : myStatus.tone === "warn"
+                        ? "badge-warn"
+                        : "badge-danger"
+                  }
+                >
+                  {myStatus.label} pts
+                </span>
+              )}
+              {me.campFeePaid ? <span className="badge-success">paid</span> : <span className="badge-muted">fee open</span>}
+            </div>
+          </div>
+
+          {myShifts.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-camp-border/60">
+              <div className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2">Your shifts</div>
+              <div className="flex flex-wrap gap-2">
+                {myShifts.map((s, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 text-xs bg-camp-bg border border-camp-border rounded px-2 py-1 text-zinc-200">
+                    <span className="text-amber-300 font-semibold">{s.points}p</span>
+                    <span className="text-zinc-400">·</span>
+                    {s.shift} <span className="text-zinc-500">{s.day.slice(0, 3)}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <StatCard icon={Users} label="Campers" value={totalCampers} hint={`${paidCount} paid`} />

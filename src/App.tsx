@@ -1,6 +1,7 @@
 import { Route, Router, Switch } from "wouter";
 import { ToastProvider } from "./hooks/useToast";
 import { useCampData } from "./hooks/useCampData";
+import { IdentityProvider } from "./hooks/useIdentity";
 import { AppShell } from "./components/layout/AppShell";
 import { DashboardPage } from "./pages/Dashboard";
 import { CampersPage } from "./pages/Campers";
@@ -19,23 +20,25 @@ export default function App() {
   const camp = useCampData();
   return (
     <ToastProvider>
-      <Router base={rawBase()}>
-        <AppShell camp={camp}>
-          <Switch>
-            <Route path="/" component={() => <DashboardPage camp={camp} />} />
-            <Route path="/campers" component={() => <CampersPage camp={camp} />} />
-            <Route path="/shifts" component={() => <ShiftsPage camp={camp} />} />
-            <Route path="/points" component={() => <PointsPage camp={camp} />} />
-            <Route path="/layout" component={() => <LayoutPage camp={camp} />} />
-            <Route path="/kitchen" component={() => <KitchenPage camp={camp} />} />
-            <Route>
-              <div className="card text-center text-zinc-400">
-                Page not found. Head back to the camp fire.
-              </div>
-            </Route>
-          </Switch>
-        </AppShell>
-      </Router>
+      <IdentityProvider campers={camp.data.campers}>
+        <Router base={rawBase()}>
+          <AppShell camp={camp}>
+            <Switch>
+              <Route path="/" component={() => <DashboardPage camp={camp} />} />
+              <Route path="/campers" component={() => <CampersPage camp={camp} />} />
+              <Route path="/shifts" component={() => <ShiftsPage camp={camp} />} />
+              <Route path="/points" component={() => <PointsPage camp={camp} />} />
+              <Route path="/layout" component={() => <LayoutPage camp={camp} />} />
+              <Route path="/kitchen" component={() => <KitchenPage camp={camp} />} />
+              <Route>
+                <div className="card text-center text-zinc-400">
+                  Page not found. Head back to the camp fire.
+                </div>
+              </Route>
+            </Switch>
+          </AppShell>
+        </Router>
+      </IdentityProvider>
     </ToastProvider>
   );
 }

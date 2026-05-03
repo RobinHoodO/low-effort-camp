@@ -4,6 +4,7 @@ import { dayLabels } from "../data/seed-data";
 import type { Camper } from "../data/types";
 import { Modal } from "../components/ui/Modal";
 import { useToast } from "../hooks/useToast";
+import { useIdentity } from "../hooks/useIdentity";
 import type { UseCampData } from "../hooks/useCampData";
 import { cn } from "../lib/cn";
 
@@ -16,6 +17,7 @@ export function CampersPage({ camp }: { camp: UseCampData }) {
     dir: "asc",
   });
   const [activeId, setActiveId] = useState<number | null>(null);
+  const { me } = useIdentity();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -79,57 +81,62 @@ export function CampersPage({ camp }: { camp: UseCampData }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => (
-              <tr key={c.id}>
-                <td className="font-medium text-zinc-100">{c.name}</td>
-                <td>
-                  <BoolPill ok={c.membership} okLabel="yes" badLabel="no" />
-                </td>
-                <td>
-                  <BoolPill ok={c.campFeePaid} okLabel="paid" badLabel="open" />
-                </td>
-                <td>
-                  <div className="text-xs text-zinc-300 space-y-0.5 max-w-[180px]">
-                    {c.email && (
-                      <div className="flex items-center gap-1 truncate">
-                        <Mail size={11} className="text-zinc-500" /> {c.email}
-                      </div>
+            {filtered.map((c) => {
+              const isMe = me?.id === c.id;
+              return (
+                <tr key={c.id} className={isMe ? "bg-camp-accent/10" : undefined}>
+                  <td className={cn("font-medium", isMe ? "text-amber-300" : "text-zinc-100")}>
+                    {c.name} {isMe && <span className="text-[10px] text-amber-400/80">(you)</span>}
+                  </td>
+                  <td>
+                    <BoolPill ok={c.membership} okLabel="yes" badLabel="no" />
+                  </td>
+                  <td>
+                    <BoolPill ok={c.campFeePaid} okLabel="paid" badLabel="open" />
+                  </td>
+                  <td>
+                    <div className="text-xs text-zinc-300 space-y-0.5 max-w-[180px]">
+                      {c.email && (
+                        <div className="flex items-center gap-1 truncate">
+                          <Mail size={11} className="text-zinc-500" /> {c.email}
+                        </div>
+                      )}
+                      {c.phone && (
+                        <div className="flex items-center gap-1 truncate">
+                          <Phone size={11} className="text-zinc-500" /> {c.phone}
+                        </div>
+                      )}
+                      {!c.email && !c.phone && <span className="text-zinc-600">—</span>}
+                    </div>
+                  </td>
+                  <td>{c.dietary || <span className="text-zinc-600">—</span>}</td>
+                  <td>
+                    {c.allergies ? (
+                      <span className="badge-warn">{c.allergies}</span>
+                    ) : (
+                      <span className="text-zinc-600">—</span>
                     )}
-                    {c.phone && (
-                      <div className="flex items-center gap-1 truncate">
-                        <Phone size={11} className="text-zinc-500" /> {c.phone}
-                      </div>
-                    )}
-                    {!c.email && !c.phone && <span className="text-zinc-600">—</span>}
-                  </div>
-                </td>
-                <td>{c.dietary || <span className="text-zinc-600">—</span>}</td>
-                <td>
-                  {c.allergies ? (
-                    <span className="badge-warn">{c.allergies}</span>
-                  ) : (
-                    <span className="text-zinc-600">—</span>
-                  )}
-                </td>
-                <td>
-                  <div className="text-xs text-zinc-300 max-w-[160px] truncate" title={c.transport}>
-                    {c.transport || <span className="text-zinc-600">—</span>}
-                  </div>
-                </td>
-                <td>
-                  <AttendanceStrip camper={c} />
-                </td>
-                <td className="text-right">
-                  <button
-                    onClick={() => setActiveId(c.id)}
-                    className="btn-ghost p-1.5"
-                    title="Edit"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td>
+                    <div className="text-xs text-zinc-300 max-w-[160px] truncate" title={c.transport}>
+                      {c.transport || <span className="text-zinc-600">—</span>}
+                    </div>
+                  </td>
+                  <td>
+                    <AttendanceStrip camper={c} />
+                  </td>
+                  <td className="text-right">
+                    <button
+                      onClick={() => setActiveId(c.id)}
+                      className="btn-ghost p-1.5"
+                      title="Edit"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={9} className="text-center py-8 text-zinc-500">

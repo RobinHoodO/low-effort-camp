@@ -3,10 +3,12 @@ import { Search } from "lucide-react";
 import { rules } from "../data/seed-data";
 import { computePoints, statusForCamper } from "../lib/points";
 import type { UseCampData } from "../hooks/useCampData";
+import { useIdentity } from "../hooks/useIdentity";
 import { cn } from "../lib/cn";
 
 export function PointsPage({ camp }: { camp: UseCampData }) {
   const [query, setQuery] = useState("");
+  const { me } = useIdentity();
   const points = useMemo(() => computePoints(camp.data), [camp.data]);
 
   const camperByName = useMemo(
@@ -17,6 +19,14 @@ export function PointsPage({ camp }: { camp: UseCampData }) {
   const filtered = points.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase()),
   );
+
+  // pin me to top
+  const sorted = useMemo(() => {
+    if (!me) return filtered;
+    const mine = filtered.find((p) => p.name === me.name);
+    const rest = filtered.filter((p) => p.name !== me.name);
+    return mine ? [mine, ...rest] : filtered;
+  }, [filtered, me]);
 
   return (
     <div className="space-y-4">
@@ -62,14 +72,17 @@ export function PointsPage({ camp }: { camp: UseCampData }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => {
+            {sorted.map((p) => {
               const c = camperByName.get(p.name);
               const status = c
                 ? statusForCamper(c, p)
                 : { tone: "muted" as const, label: `${p.total} pts` };
+              const isMe = me?.name === p.name;
               return (
-                <tr key={p.name}>
-                  <td className="font-medium text-zinc-100">{p.name}</td>
+                <tr key={p.name} className={isMe ? "bg-camp-accent/10" : undefined}>
+                  <td className={cn("font-medium", isMe ? "text-amber-300" : "text-zinc-100")}>
+                    {p.name} {isMe && <span className="text-[10px] text-amber-400/80">(you)</span>}
+                  </td>
                   <td className="text-right font-bold text-amber-300">{p.total}</td>
                   <td className="text-right">{p.onePoint}</td>
                   <td className="text-right">{p.twoPoint}</td>
@@ -99,7 +112,7 @@ export function PointsPage({ camp }: { camp: UseCampData }) {
                 </tr>
               );
             })}
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <tr>
                 <td colSpan={9} className="text-center py-8 text-zinc-500">
                   No matches.

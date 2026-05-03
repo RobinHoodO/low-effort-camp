@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Plus, X } from "lucide-react";
 import { shiftDayLabels } from "../data/seed-data";
 import type { Shift, ShiftCategory } from "../data/types";
 import { Modal } from "../components/ui/Modal";
 import { useToast } from "../hooks/useToast";
+import { useIdentity } from "../hooks/useIdentity";
 import type { UseCampData } from "../hooks/useCampData";
 import { computePoints, shiftFullness } from "../lib/points";
 import { cn } from "../lib/cn";
@@ -23,8 +24,14 @@ const categoryColor: Record<ShiftCategory, string> = {
 };
 
 export function ShiftsPage({ camp }: { camp: UseCampData }) {
-  const [filterPerson, setFilterPerson] = useState<string>("");
+  const { me } = useIdentity();
+  const [filterPerson, setFilterPerson] = useState<string>(me?.name ?? "");
   const [signupTarget, setSignupTarget] = useState<{ shiftId: string; day: string } | null>(null);
+
+  // keep filter in sync when identity changes
+  useEffect(() => {
+    if (me) setFilterPerson(me.name);
+  }, [me?.name]);
 
   const points = useMemo(() => computePoints(camp.data), [camp.data]);
   const pointsByName = useMemo(() => new Map(points.map((p) => [p.name, p.total])), [points]);
@@ -106,6 +113,14 @@ export function ShiftsPage({ camp }: { camp: UseCampData }) {
                   matchPerson={(day) => isPersonShift(shift, day)}
                   onSlotClick={(day) => setSignupTarget({ shiftId: shift.id, day })}
                   onRemove={(day, name) => camp.removeCamperFromShift(shift.id, day, name)}
+                  me={me?.name}
+                  onSignMeUp={(day) => {
+                    if (me) {
+                      camp.addCamperToShift(shift.id, day, me.name);
+                    } else {
+                      setSignupTarget({ shiftId: shift.id, day });
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -117,6 +132,7 @@ export function ShiftsPage({ camp }: { camp: UseCampData }) {
         camp={camp}
         target={signupTarget}
         onClose={() => setSignupTarget(null)}
+        defaultName={me?.name}
       />
     </div>
   );
@@ -128,12 +144,16 @@ function ShiftCard({
   matchPerson,
   onSlotClick,
   onRemove,
+  me,
+  onSignMeUp,
 }: {
   shift: Shift;
   highlightPerson: string;
   matchPerson: (day: string) => boolean;
   onSlotClick: (day: string) => void;
   onRemove: (day: string, name: string) => void;
+  me?: string;
+  onSignMeUp: (day: string) => void;
 }) {
   const totalFilled = shiftDayLabels.reduce(
     (acc, d) => acc + (shift.days[d] ?? []).length,
@@ -167,6 +187,7 @@ function ShiftCard({
           const list = shift.days[day] ?? [];
           const fullness = shiftFullness(shift, day);
           const isMine = matchPerson(day);
+          const imAlreadyOn = me ? list.includes(me) : false;
           return (
             <div
               key={day}
@@ -209,17 +230,19 @@ function ShiftCard({
                     />
                   </button>
                 ))}
-                <button
-                  onClick={() => onSlotClick(day)}
-                  className={cn(
-                    "flex items-center justify-center gap-1 text-[11px] rounded border border-dashed py-0.5 transition-colors",
-                    fullness.isFull
-                      ? "border-camp-border/60 text-zinc-600 hover:text-zinc-400"
-                      : "border-camp-border text-zinc-400 hover:border-camp-accent hover:text-amber-300",
-                  )}
-                >
-                  <Plus size={10} /> add
-                </button>
+                {!imAlreadyOn && (
+                  <button
+                    onClick={() => me ? onSignMeUp(day) : onSlotClick(day)}
+                    className={cn(
+                      "flex items-center justify-center gap-1 text-[11px] rounded border border-dashed py-0.5 transition-colors",
+                      fullness.isFull
+                        ? "border-camp-border/60 text-zinc-600 hover:text-zinc-400"
+                        : "border-camp-border text-zinc-400 hover:border-camp-accent hover:text-amber-300",
+                    )}
+                  >
+                    <Plus size={10} /> {me ? "me" : "add"}
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -233,13 +256,15 @@ function SignupModal({
   camp,
   target,
   onClose,
+  defaultName,
 }: {
   camp: UseCampData;
   target: { shiftId: string; day: string } | null;
   onClose: () => void;
+  defaultName?: string;
 }) {
   const toast = useToast();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(defaultName ?? "");
   const [custom, setCustom] = useState("");
 
   if (!target) return null;
